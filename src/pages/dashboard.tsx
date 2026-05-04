@@ -1,0 +1,312 @@
+import { useEffect, useState } from "react";
+import { TopBar } from "../components/topbar.tsx";
+import { Button } from "../components/button.tsx";
+import { CreateProjectModal } from "../components/create-project.tsx";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/table.tsx";
+import { renderTaskSignal, renderLocalTime } from "../utils.ts";
+import {
+  MapDashboardProject,
+  MapDashboardTask,
+  type DashboardProject,
+  type DashboardProjectsResponse,
+  type DashboardTask,
+  type DashboardTasksResponse,
+} from "../types/dashboard.ts";
+import { ApiFetch } from "../utils/api.ts";
+
+export function Dashboard() {
+  const [showModal, setShowModal] = useState(false);
+
+  const [recentAssignedTasks, setRecentAssignedTasks] = useState<
+    DashboardTask[]
+  >([]);
+  const [recentUnassignedTasks, setRecentUnassignedTasks] = useState<
+    DashboardTask[]
+  >([]);
+  const [recentlyCreatedProjects, setRecentlyCreatedProjects] = useState<
+    DashboardProject[]
+  >([]);
+  const [recentlyJoinedProjects, setRecentlyJoinedProjects] = useState<
+    DashboardProject[]
+  >([]);
+
+  async function getRecentAssignedTasks() {
+    try {
+      const response = await ApiFetch("/dashboard/tasks/assigned");
+      if (response.ok) {
+        const responseData = await response.json();
+        const data: DashboardTasksResponse = responseData.data;
+        if (data) {
+          setRecentAssignedTasks(data.tasks.map(MapDashboardTask));
+        }
+      } else {
+        throw new Error("Failed to fetch dashboard assigned tasks");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function getRecentUnassignedTasks() {
+    try {
+      const response = await ApiFetch("/dashboard/tasks/unassigned");
+      if (response.ok) {
+        const responseData = await response.json();
+        const data: DashboardTasksResponse = responseData.data;
+        if (data) {
+          setRecentUnassignedTasks(data.tasks.map(MapDashboardTask));
+        }
+      } else {
+        throw new Error("Failed to fetch dashboard assigned tasks");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function getRecentlyCreatedTasks() {
+    try {
+      const response = await ApiFetch("/dashboard/projects/created");
+      if (response.ok) {
+        const responseData = await response.json();
+        const data: DashboardProjectsResponse = responseData.data;
+        if (data) {
+          setRecentlyCreatedProjects(data.projects.map(MapDashboardProject));
+        }
+      } else {
+        throw new Error("Failed to fetch dashboard assigned tasks");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function getRecentlyJoinedTasks() {
+    try {
+      const response = await ApiFetch("/dashboard/projects/joined");
+      if (response.ok) {
+        const responseData = await response.json();
+        const data: DashboardProjectsResponse = responseData.data;
+        if (data) {
+          setRecentlyJoinedProjects(data.projects.map(MapDashboardProject));
+        }
+      } else {
+        throw new Error("Failed to fetch dashboard assigned tasks");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    getRecentAssignedTasks();
+    getRecentUnassignedTasks();
+    getRecentlyCreatedTasks();
+    getRecentlyJoinedTasks();
+  }, []);
+
+  return (
+    <>
+      <TopBar
+        title="Dashboard"
+        actions={
+          <Button onClick={() => setShowModal(true)}>New Project</Button>
+        }
+      />
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        {/* Recent Assigned Tasks */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-text-primary tracking-snug">
+            Recent Assigned Tasks
+          </h2>
+          <Table>
+            <TableHeader>
+              <TableHead>Task</TableHead>
+              <TableHead>Project</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead align="right">Updated</TableHead>
+            </TableHeader>
+            <TableBody>
+              {recentAssignedTasks.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-sm text-text-muted"
+                  >
+                    No tasks found
+                  </td>
+                </tr>
+              ) : (
+                recentAssignedTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell>
+                      <a
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        className="font-medium text-text-primary hover:text-primary transition duration-fast"
+                      >
+                        {task.title}
+                      </a>
+                    </TableCell>
+                    <TableCell muted>{task.projectName}</TableCell>
+                    <TableCell muted>{task.status}</TableCell>
+                    <TableCell align="right" muted>
+                      {task.updatedAt && renderLocalTime(task.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </section>
+
+        {/* Recent Unassigned Tasks */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-text-primary tracking-snug">
+            Recent Unassigned Tasks
+          </h2>
+          <Table>
+            <TableHeader>
+              <TableHead>Task</TableHead>
+              <TableHead>Assignee</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead align="right">Updated</TableHead>
+            </TableHeader>
+            <TableBody>
+              {recentUnassignedTasks.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-sm text-text-muted"
+                  >
+                    No tasks found
+                  </td>
+                </tr>
+              ) : (
+                recentUnassignedTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell>
+                      <a
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        className="font-medium text-text-primary hover:text-primary transition duration-fast"
+                      >
+                        {task.title}
+                      </a>
+                    </TableCell>
+                    <TableCell muted>{task.projectName}</TableCell>
+                    <TableCell muted>{task.status}</TableCell>
+                    <TableCell align="right" muted>
+                      {task.updatedAt && renderLocalTime(task.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </section>
+
+        {/* Recently Created Projects */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-text-primary tracking-snug">
+            Recently Created Projects
+          </h2>
+          <Table>
+            <TableHeader>
+              <TableHead>Project</TableHead>
+              <TableHead>Tasks</TableHead>
+              <TableHead align="right">Updated</TableHead>
+            </TableHeader>
+            <TableBody>
+              {recentlyCreatedProjects.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-sm text-text-muted"
+                  >
+                    No recently created projects found
+                  </td>
+                </tr>
+              ) : (
+                recentlyCreatedProjects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <a
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        className="font-medium text-text-primary hover:text-primary transition duration-fast"
+                      >
+                        {project.name}
+                      </a>
+                    </TableCell>
+                    <TableCell>{renderTaskSignal(project)}</TableCell>
+                    <TableCell align="right" muted>
+                      {project.updatedAt && renderLocalTime(project.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </section>
+
+        {/* Recently Joined Projects */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-text-primary tracking-snug">
+            Recently Joined Projects
+          </h2>
+          <Table>
+            <TableHeader>
+              <TableHead>Project</TableHead>
+              <TableHead>Tasks</TableHead>
+              <TableHead align="right">Updated</TableHead>
+            </TableHeader>
+            <TableBody>
+              {recentlyJoinedProjects.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-sm text-text-muted"
+                  >
+                    No recently joined projects found
+                  </td>
+                </tr>
+              ) : (
+                recentlyJoinedProjects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <a
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        className="font-medium text-text-primary hover:text-primary transition duration-fast"
+                      >
+                        {project.name}
+                      </a>
+                    </TableCell>
+                    <TableCell>{renderTaskSignal(project)}</TableCell>
+                    <TableCell align="right" muted>
+                      {project.updatedAt && renderLocalTime(project.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </section>
+      </div>
+
+      <CreateProjectModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+      />
+    </>
+  );
+}
