@@ -20,6 +20,9 @@ import PrivacyPage from "./pages/privacy";
 import CookiePage from "./pages/cookie";
 import GDPRPage from "./pages/gdpr";
 import { MessagesPage } from "./pages/messages";
+import { WebSocketProvider } from "./context/ws";
+
+const WEBSOCKET_URL = "ws://localhost:8080";
 
 function App() {
   return (
@@ -46,7 +49,13 @@ function App() {
             <Route path="/gdpr" element={<GDPRPage />} />
 
             <Route element={<ProtectedRoute />}>
-              <Route element={<AppLayout />}>
+              <Route
+                element={
+                  <WebSocketProvider url={WEBSOCKET_URL}>
+                    <AppLayout />
+                  </WebSocketProvider>
+                }
+              >
                 <Route index element={<Dashboard />} />
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/projects/:id" element={<ProjectDetailsPage />} />
