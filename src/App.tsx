@@ -22,17 +22,12 @@ import GDPRPage from "./pages/gdpr";
 import { MessagesPage } from "./pages/messages";
 import { WebSocketProvider } from "./context/ws";
 
-const WEBSOCKET_URL = "ws://localhost:8080";
+const WEBSOCKET_URL = "ws://localhost:8081";
 
 function App() {
   return (
     <>
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          duration: 7000,
-        }}
-      />
+      <Toaster position="bottom-right" reverseOrder={false} />
       <Router>
         <AuthProvider>
           <Routes>
