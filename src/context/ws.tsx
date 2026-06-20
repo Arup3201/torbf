@@ -181,6 +181,7 @@ function getNotificationInfo(notification: RealtimeNotification) {
 
 function useWebSocket({ url }: WSHook) {
   const wsRef = useRef<WebSocket | null>(null);
+  const refreshToastID = useRef<string | null>(null);
 
   const connect = useCallback(() => {
     const socket = new WebSocket(url);
@@ -194,9 +195,17 @@ function useWebSocket({ url }: WSHook) {
       const data = JSON.parse(ev.data);
       switch (data.type) {
         case "ack":
-          toast.success("You are connected to the server");
+          if (refreshToastID.current) {
+            toast.dismiss(refreshToastID.current);
+            toast.success("You are connected to the server again");
+          } else {
+            toast.success("You are connected to the server");
+          }
           break;
         case "refresh":
+          refreshToastID.current = toast.loading(
+            "Refreshing connection with the server",
+          );
           await getValidToken();
           const token = tokenStore.get();
           socket.send(JSON.stringify({ type: "token", token: token }));
