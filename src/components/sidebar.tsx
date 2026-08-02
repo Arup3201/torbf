@@ -6,11 +6,9 @@ import { Button } from "./button";
 import type { LucideIcon } from "lucide-react";
 import {
   LogOut,
-  ChevronsUpDown,
   MenuIcon,
   SquareCheckBig,
   Telescope,
-  X,
   BellRing,
 } from "lucide-react";
 import { useState } from "react";
@@ -92,20 +90,23 @@ export function Sidebar() {
 
         {/* User footer */}
         <div className="shrink-0 border-t border-border p-2 space-y-1">
-          <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-bg-elevated transition duration-fast cursor-default">
-            <div className="h-7 w-7 rounded-full bg-bg-elevated flex items-center justify-center text-xs font-semibold text-primary shrink-0 ring-1 ring-border">
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition duration-fast hover:bg-bg-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <div className="h-7 w-7 rounded-full bg-emerald-500/10 flex items-center justify-center text-xs font-semibold text-emerald-300 shrink-0 ring-1 ring-emerald-500/30">
               {initials}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-text-primary truncate leading-tight">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-text-primary leading-tight">
                 {user?.displayName}
               </p>
-              <p className="text-xs text-text-muted truncate leading-tight">
+              <p className="truncate text-xs text-text-muted leading-tight">
                 {user?.email}
               </p>
             </div>
-            <ChevronsUpDown size={13} className="text-text-muted shrink-0" />
-          </div>
+          </button>
 
           <Button
             variant="danger"
@@ -119,78 +120,71 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-900 border-t border-zinc-800 flex items-center justify-between px-3 h-16">
-        {NavItems.map((navitem, i) => (
-          <MobileNavItem
-            key={`${navitem.name}-${i}`}
-            active={active === i}
-            icon={navitem.icon}
-            onClick={() => navigate(navitem.path)}
-          >
-            {navitem.name}
-          </MobileNavItem>
-        ))}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-900 border-t border-zinc-800">
+        <div className="relative">
+          <nav className="flex items-center justify-between px-3 h-16">
+            {NavItems.map((navitem, i) => (
+              <MobileNavItem
+                key={`${navitem.name}-${i}`}
+                active={active === i}
+                icon={navitem.icon}
+                onClick={() => navigate(navitem.path)}
+              >
+                {navitem.name}
+              </MobileNavItem>
+            ))}
 
-        {/* Avatar as last item — same width as nav items */}
-        <button
-          onClick={() => setShowUserMenu(true)}
-          className="relative flex flex-col items-center justify-center gap-1 py-1.5 rounded-md w-full transition duration-fast cursor-pointer hover:bg-zinc-800 group"
-        >
-          <div className="h-4.5 w-4.5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-emerald-400 ring-1 ring-zinc-700 group-hover:ring-emerald-500 transition duration-fast">
-            {initials}
-          </div>
-          <span className="text-[10px] font-medium leading-none text-zinc-500 group-hover:text-zinc-300 transition duration-fast">
-            Account
-          </span>
-        </button>
-      </nav>
-
-      {/* ── Mobile user menu overlay ── */}
-      {showUserMenu && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowUserMenu(false)}
-          />
-
-          {/* Sheet */}
-          <div className="relative bg-bg-elevated border-t border-border rounded-t-xl p-4 space-y-4 animate-slide-up">
-            {/* Close */}
             <button
-              onClick={() => setShowUserMenu(false)}
-              className="absolute top-3.5 right-4 h-7 w-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-overlay transition duration-fast"
+              onClick={() => setShowUserMenu((prev) => !prev)}
+              className="relative flex flex-col items-center justify-center gap-1 py-1.5 rounded-md w-full transition duration-fast cursor-pointer hover:bg-zinc-800 group"
             >
-              <X size={15} />
-            </button>
-
-            {/* User info */}
-            <div className="flex items-center gap-3 pr-8">
-              <div className="h-10 w-10 rounded-full bg-bg-overlay flex items-center justify-center text-sm font-semibold text-primary shrink-0 ring-1 ring-border">
+              <div className="h-4.5 w-4.5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-emerald-400 ring-1 ring-zinc-700 group-hover:ring-emerald-500 transition duration-fast">
                 {initials}
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-text-primary truncate">
-                  {user?.displayName}
-                </p>
-                <p className="text-xs text-text-muted truncate">
-                  {user?.email}
-                </p>
-              </div>
-            </div>
+              <span className="text-[10px] font-medium leading-none text-zinc-500 group-hover:text-zinc-300 transition duration-fast">
+                Account
+              </span>
+            </button>
+          </nav>
 
-            {/* Sign out */}
-            <Button
-              variant="danger"
-              className="w-full gap-1.5"
-              onClick={handleLogout}
-            >
-              <LogOut size={13} />
-              Sign out
-            </Button>
-          </div>
+          {showUserMenu && (
+            <div className="absolute bottom-18 right-2 z-50 w-auto min-w-55 rounded-xl border border-border bg-zinc-950/95 shadow-lg backdrop-blur-sm animate-slide-up">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserMenu(false);
+                  navigate("/profile");
+                }}
+                className="flex w-full cursor-pointer items-center gap-3 border-b border-border px-3 py-3 text-left transition hover:bg-zinc-800/80"
+              >
+                <div className="h-9 w-9 rounded-full bg-emerald-500/10 flex items-center justify-center text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30 shrink-0">
+                  {initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-text-primary">
+                    {user?.displayName}
+                  </p>
+                  <p className="truncate text-xs text-text-muted">
+                    {user?.email}
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserMenu(false);
+                  handleLogout();
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-3 text-left text-red-400 transition hover:bg-red-950/30"
+              >
+                <LogOut size={15} />
+                <span className="text-sm">Sign out</span>
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </>
   );
 }
