@@ -22,7 +22,7 @@ import GDPRPage from "./pages/gdpr";
 import { MessagesPage } from "./pages/messages";
 import { WebSocketProvider } from "./context/ws";
 
-const WEBSOCKET_URL = "ws://localhost:8081";
+const WEBSOCKET_URL = import.meta.env.VITE_WS_URL;
 
 function App() {
   return (

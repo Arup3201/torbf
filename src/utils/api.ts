@@ -1,7 +1,7 @@
 import { tokenStore } from "./token";
 import { userStore } from "./user";
 
-const API_ROOT = "http://localhost:8081/api/v1";
+const API_ROOT = import.meta.env.VITE_API_URL;
 
 const ApiFetch = async (
   url: string,
