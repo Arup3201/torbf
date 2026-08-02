@@ -19,6 +19,7 @@ import TermsPage from "./pages/terms";
 import PrivacyPage from "./pages/privacy";
 import CookiePage from "./pages/cookie";
 import GDPRPage from "./pages/gdpr";
+import UserProfilePage from "./pages/user-profile";
 import { MessagesPage } from "./pages/messages";
 import { WebSocketProvider } from "./context/ws";
 
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/explore" element={<ExploreProjectsPage />} />
                 <Route path="/explore/:id" element={<ProjectExplorePage />} />
                 <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/profile" element={<UserProfilePage />} />
               </Route>
             </Route>
           </Routes>
