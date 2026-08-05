@@ -4,7 +4,12 @@ import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
 import { Modal } from "../components/modal";
 import { TopBar } from "../components/topbar";
-import { useAuth } from "../context/auth";
+import { ApiFetch } from "../utils/api";
+import {
+  MapUserProfile,
+  type UserProfile,
+  type UserProfileApi,
+} from "../types/user";
 
 type Option = {
   label: string;
@@ -60,33 +65,47 @@ function getInitials(name: string) {
 }
 
 export default function UserProfilePage() {
-  const { user } = useAuth();
+  const [profileInfo, setProfileInfo] = useState<UserProfile | null>(null);
+  const [updatedProfileInfo, setUpdatedProfileInfo] =
+    useState<UserProfile | null>(null);
+
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [editor, setEditor] = useState<
     "username" | "timezone" | "skills" | null
   >(null);
-  const [usernameValue, setUsernameValue] = useState(user?.username || "");
-  const [timezoneValue, setTimezoneValue] = useState("UTC+05:30");
-  const [skillsInput, setSkillsInput] = useState(
-    "C, Python, Java, PostgreSQL, MySQL, Git, AWS, Docker, NGINX, Prometheus, Grafana",
-  );
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [passwords, setPasswords] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  });
+
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
     confirm: false,
   });
 
-  useEffect(() => {
-    setUsernameValue(user?.username || "");
-  }, [user?.username]);
+  async function getUserProfile() {
+    try {
+      const response = await ApiFetch("/profile");
+      if (response.ok) {
+        const respondeData = await response.json();
+        const data: UserProfileApi = respondeData.data;
+        setProfileInfo(MapUserProfile(data));
+        setUpdatedProfileInfo(MapUserProfile(data));
+      } else {
+        throw new Error("Failed to get projects.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
-  const displayName = user?.displayName || user?.username || "";
-  const email = user?.email || "";
-  const initials = getInitials(displayName);
+  useEffect(() => {
+    getUserProfile();
+  }, []);
 
   const parseSkills = (value: string) =>
     Array.from(
@@ -98,13 +117,13 @@ export default function UserProfilePage() {
       ),
     );
 
-  const allSkills = parseSkills(skillsInput);
+  const allSkills = parseSkills(profileInfo?.skills || "");
   const visibleSkills = allSkills.slice(0, 4);
-  const username = usernameValue ? `@${usernameValue}` : "";
+  const username = profileInfo?.username ? `@${profileInfo.username}` : "";
 
   const profileDetails = [
     { label: "Username", value: username, editable: true },
-    { label: "Email", value: email },
+    { label: "Email", value: profileInfo?.email },
     {
       label: "Skills",
       value: visibleSkills,
@@ -113,37 +132,45 @@ export default function UserProfilePage() {
     },
     {
       label: "Timezone",
-      value: timezoneValue,
+      value: profileInfo?.timezone,
       editable: true,
     },
   ];
 
   const stats = [
-    { label: "Projects", value: "12" },
-    { label: "Tasks", value: "34" },
-    { label: "Completed", value: "89%" },
+    { label: "Projects", value: profileInfo?.projects || 0 },
+    { label: "Tasks", value: profileInfo?.tasks || 0 },
+    {
+      label: "Completed",
+      value:
+        profileInfo?.tasks && profileInfo.tasks !== 0
+          ? (profileInfo?.completedTasks / profileInfo?.tasks) * 100
+          : "-",
+    },
   ];
 
   const closeEditor = () => setEditor(null);
 
   const closePasswordModal = () => {
     setShowPasswordModal(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    setPasswords({
+      current: "",
+      new: "",
+      confirm: "",
+    });
     setShowPasswords({ current: false, new: false, confirm: false });
   };
 
   const savePassword = () => {
-    if (!currentPassword.trim()) {
+    if (!passwords.current.trim()) {
       return;
     }
 
-    if (newPassword.length < 8) {
+    if (passwords.new.length < 8) {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (passwords.new !== passwords.confirm) {
       return;
     }
 
@@ -151,17 +178,45 @@ export default function UserProfilePage() {
   };
 
   const saveEditor = () => {
+    // API call for UPDATE
+
     if (editor === "username") {
-      setUsernameValue(usernameValue.trim());
+      setProfileInfo((prev) => {
+        if (updatedProfileInfo?.username && prev) {
+          return {
+            ...prev,
+            username: updatedProfileInfo.username,
+          };
+        }
+
+        return null;
+      });
     }
 
     if (editor === "timezone") {
-      setTimezoneValue(timezoneValue.trim() || "UTC+5:30");
+      setProfileInfo((prev) => {
+        if (updatedProfileInfo?.timezone && prev) {
+          return {
+            ...prev,
+            timezone: updatedProfileInfo.timezone,
+          };
+        }
+
+        return null;
+      });
     }
 
     if (editor === "skills") {
-      const nextSkills = parseSkills(skillsInput);
-      setSkillsInput(nextSkills.join(", "));
+      setProfileInfo((prev) => {
+        if (updatedProfileInfo?.skills && prev) {
+          return {
+            ...prev,
+            skills: updatedProfileInfo.skills,
+          };
+        }
+
+        return null;
+      });
     }
 
     closeEditor();
@@ -189,15 +244,19 @@ export default function UserProfilePage() {
             <CardContent className="p-4 md:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-lg font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
-                  {initials}
+                  {getInitials(
+                    profileInfo?.displayName || profileInfo?.username || "",
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate text-lg font-semibold text-text-primary md:text-xl">
-                    {displayName}
+                    {profileInfo?.displayName || ""}
                   </h2>
                   <p className="text-sm text-text-muted">{username}</p>
-                  <p className="mt-2 text-sm text-text-muted">{email}</p>
+                  <p className="mt-2 text-sm text-text-muted">
+                    {profileInfo?.email}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -354,21 +413,24 @@ export default function UserProfilePage() {
               {[
                 {
                   label: "Current password",
-                  value: currentPassword,
+                  value: passwords.current,
                   key: "current",
-                  setter: setCurrentPassword,
+                  setter: (v: string) =>
+                    setPasswords((prev) => ({ ...prev, current: v })),
                 },
                 {
                   label: "New password",
-                  value: newPassword,
+                  value: passwords.new,
                   key: "new",
-                  setter: setNewPassword,
+                  setter: (v: string) =>
+                    setPasswords((prev) => ({ ...prev, new: v })),
                 },
                 {
                   label: "Confirm password",
-                  value: confirmPassword,
+                  value: passwords.confirm,
                   key: "confirm",
-                  setter: setConfirmPassword,
+                  setter: (v: string) =>
+                    setPasswords((prev) => ({ ...prev, confirm: v })),
                 },
               ].map((field) => {
                 const isVisible =
@@ -445,9 +507,9 @@ export default function UserProfilePage() {
                 type="button"
                 onClick={savePassword}
                 disabled={
-                  !currentPassword.trim() ||
-                  newPassword.length < 4 ||
-                  newPassword !== confirmPassword
+                  !passwords.current.trim() ||
+                  passwords.new.length < 4 ||
+                  passwords.new !== passwords.confirm
                 }
               >
                 Update
@@ -464,8 +526,16 @@ export default function UserProfilePage() {
           <div className="p-4">
             {editor === "skills" && (
               <textarea
-                value={skillsInput}
-                onChange={(e) => setSkillsInput(e.target.value)}
+                value={updatedProfileInfo?.skills}
+                onChange={(e) =>
+                  setUpdatedProfileInfo((prev) => {
+                    if (prev) {
+                      return { ...prev, skills: e.target.value };
+                    }
+
+                    return null;
+                  })
+                }
                 rows={4}
                 className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
                 placeholder="C, Python, Java"
@@ -474,21 +544,37 @@ export default function UserProfilePage() {
             {editor === "username" && (
               <input
                 autoFocus
-                value={usernameValue}
-                onChange={(e) => setUsernameValue(e.target.value)}
+                value={updatedProfileInfo?.username}
+                onChange={(e) =>
+                  setUpdatedProfileInfo((prev) => {
+                    if (prev) {
+                      return { ...prev, username: e.target.value };
+                    }
+
+                    return null;
+                  })
+                }
                 className="h-9 w-full rounded-md border border-border bg-bg-elevated px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
                 placeholder="Enter username"
               />
             )}
             {editor === "timezone" && (
               <select
-                value={timezoneValue}
-                onChange={(e) => setTimezoneValue(e.target.value)}
+                value={updatedProfileInfo?.timezone}
+                onChange={(e) =>
+                  setUpdatedProfileInfo((prev) => {
+                    if (prev) {
+                      return { ...prev, timezone: e.target.value };
+                    }
+
+                    return null;
+                  })
+                }
                 className="h-9 w-full rounded-md border border-border bg-bg-elevated px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
               >
                 {TIMEZONES.map((tz: Option) => (
                   <option
-                    selected={tz.value === timezoneValue}
+                    selected={tz.value === profileInfo?.timezone}
                     value={tz.value}
                   >
                     {tz.label}
