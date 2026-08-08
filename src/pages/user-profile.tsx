@@ -177,46 +177,42 @@ export default function UserProfilePage() {
     closePasswordModal();
   };
 
-  const saveEditor = () => {
-    // API call for UPDATE
+  const saveEditor = async () => {
+    const update: Record<string, string | null> = {};
 
     if (editor === "username") {
-      setProfileInfo((prev) => {
-        if (updatedProfileInfo?.username && prev) {
-          return {
-            ...prev,
-            username: updatedProfileInfo.username,
-          };
-        }
-
-        return null;
-      });
+      update.username = updatedProfileInfo?.username || null;
     }
 
     if (editor === "timezone") {
-      setProfileInfo((prev) => {
-        if (updatedProfileInfo?.timezone && prev) {
-          return {
-            ...prev,
-            timezone: updatedProfileInfo.timezone,
-          };
-        }
-
-        return null;
-      });
+      update.timezone = updatedProfileInfo?.timezone || null;
     }
 
     if (editor === "skills") {
-      setProfileInfo((prev) => {
-        if (updatedProfileInfo?.skills && prev) {
-          return {
-            ...prev,
-            skills: updatedProfileInfo.skills,
-          };
-        }
+      update.skills = updatedProfileInfo?.skills || null;
+    }
 
-        return null;
+    try {
+      const response = await ApiFetch("/users", {
+        method: "PATCH",
+        body: JSON.stringify(update),
       });
+      if (response.ok) {
+        setProfileInfo((prev) => {
+          if (prev) {
+            return {
+              ...prev,
+              ...update,
+            };
+          }
+
+          return null;
+        });
+      } else {
+        throw new Error("Failed to get projects.");
+      }
+    } catch (err) {
+      console.error(err);
     }
 
     closeEditor();
