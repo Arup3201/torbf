@@ -4,7 +4,7 @@ import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
 import { Modal } from "../components/modal";
 import { TopBar } from "../components/topbar";
-import { ApiFetch } from "../utils/api";
+import { API_ROOT, ApiFetch } from "../utils/api";
 import {
   MapUserProfile,
   type UserProfile,
@@ -70,22 +70,10 @@ export default function UserProfilePage() {
     useState<UserProfile | null>(null);
 
   const [showSkillsModal, setShowSkillsModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [editor, setEditor] = useState<
     "username" | "timezone" | "skills" | null
   >(null);
-
-  const [passwords, setPasswords] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  });
-
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
 
   async function getUserProfile() {
     try {
@@ -96,7 +84,7 @@ export default function UserProfilePage() {
         setProfileInfo(MapUserProfile(data));
         setUpdatedProfileInfo(MapUserProfile(data));
       } else {
-        throw new Error("Failed to get projects.");
+        throw new Error("Failed to get user profile details.");
       }
     } catch (err) {
       console.error(err);
@@ -151,22 +139,12 @@ export default function UserProfilePage() {
 
   const closeEditor = () => setEditor(null);
 
-  const closePasswordModal = () => {
-    setShowPasswordModal(false);
-    setPasswords({
-      current: "",
-      new: "",
-      confirm: "",
-    });
-    setShowPasswords({ current: false, new: false, confirm: false });
+  const closePasswordForm = () => {
+    setShowPasswordForm(false);
   };
 
-  const savePassword = () => {
-    if (!passwords.current.trim()) {
-      return;
-    }
-
-    if (passwords.new.length < 8) {
+  const savePassword = async (passwords: PasswordSet) => {
+    if (passwords.new.trim().length < 4) {
       return;
     }
 
@@ -174,7 +152,17 @@ export default function UserProfilePage() {
       return;
     }
 
-    closePasswordModal();
+    const response = await ApiFetch("/profile/add-password", {
+      method: "POST",
+      body: JSON.stringify({
+        password: passwords.new,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to create password account");
+    }
+
+    closePasswordForm();
   };
 
   const saveEditor = async () => {
@@ -209,7 +197,7 @@ export default function UserProfilePage() {
           return null;
         });
       } else {
-        throw new Error("Failed to get projects.");
+        throw new Error("Failed to update user profile data.");
       }
     } catch (err) {
       console.error(err);
@@ -217,6 +205,20 @@ export default function UserProfilePage() {
 
     closeEditor();
   };
+
+  async function connectWithGoogle() {
+    try {
+      const response = await fetch(API_ROOT + "/profile/google/redirect");
+      const json = await response.json();
+      if (json.data) {
+        window.open(json.data, "_parent");
+      } else {
+        throw new Error("No redirect URL in the response!");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   let editorTitle = "";
   switch (editor) {
@@ -256,14 +258,45 @@ export default function UserProfilePage() {
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full sm:w-auto"
-                    onClick={() => setShowPasswordModal(true)}
-                  >
-                    Change password
-                  </Button>
+                  {profileInfo?.loginMethod === "google" && (
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full sm:w-auto"
+                        onClick={() => setShowPasswordForm(true)}
+                      >
+                        Add Password
+                      </Button>
+                      <p className="max-w-xs text-xs text-text-muted sm:text-left">
+                        You are signed in with Google. Add password account as
+                        well.
+                      </p>
+                    </div>
+                  )}
+                  {profileInfo?.loginMethod === "password" && (
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={connectWithGoogle}
+                      >
+                        Connect Google
+                      </Button>
+                      <p className="max-w-xs text-xs text-text-muted sm:text-left">
+                        You can add your google account to login with Google as
+                        well.
+                      </p>
+                    </div>
+                  )}
+                  {profileInfo?.loginMethod === "both" && (
+                    <div className="flex flex-col gap-2">
+                      <p className="max-w-xs text-xs text-text-muted sm:text-left">
+                        Great job! You have connected with Google and set up a
+                        password as well.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -400,119 +433,10 @@ export default function UserProfilePage() {
         }
       />
 
-      <Modal
-        open={showPasswordModal}
-        title="Change password"
-        body={
-          <div className="p-4">
-            <div className="flex flex-col gap-4">
-              {[
-                {
-                  label: "Current password",
-                  value: passwords.current,
-                  key: "current",
-                  setter: (v: string) =>
-                    setPasswords((prev) => ({ ...prev, current: v })),
-                },
-                {
-                  label: "New password",
-                  value: passwords.new,
-                  key: "new",
-                  setter: (v: string) =>
-                    setPasswords((prev) => ({ ...prev, new: v })),
-                },
-                {
-                  label: "Confirm password",
-                  value: passwords.confirm,
-                  key: "confirm",
-                  setter: (v: string) =>
-                    setPasswords((prev) => ({ ...prev, confirm: v })),
-                },
-              ].map((field) => {
-                const isVisible =
-                  showPasswords[field.key as keyof typeof showPasswords];
-
-                return (
-                  <div key={field.key} className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-text-secondary">
-                      {field.label}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={isVisible ? "text" : "password"}
-                        value={field.value}
-                        onChange={(e) => field.setter(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-9 w-full rounded-md border border-border bg-bg-elevated px-3 pr-10 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
-                        autoComplete={
-                          field.key === "current"
-                            ? "current-password"
-                            : "new-password"
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPasswords((prev) => ({
-                            ...prev,
-                            [field.key]: !prev[field.key as keyof typeof prev],
-                          }))
-                        }
-                        className="absolute inset-y-0 right-2 flex items-center text-text-muted transition hover:text-text-primary"
-                        aria-label={
-                          isVisible ? "Hide password" : "Show password"
-                        }
-                      >
-                        {isVisible ? (
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 fill-none stroke-current"
-                            strokeWidth="1.8"
-                          >
-                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        ) : (
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-4 w-4 fill-none stroke-current"
-                            strokeWidth="1.8"
-                          >
-                            <path d="M3 3l18 18" />
-                            <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42" />
-                            <path d="M9.88 5.08A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7a16.7 16.7 0 0 1-4.04 5.13" />
-                            <path d="M6.61 6.61A16.43 16.43 0 0 0 2 12s3.5 7 10 7a10.9 10.9 0 0 0 5.39-1.61" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={closePasswordModal}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={savePassword}
-                disabled={
-                  !passwords.current.trim() ||
-                  passwords.new.length < 4 ||
-                  passwords.new !== passwords.confirm
-                }
-              >
-                Update
-              </Button>
-            </div>
-          </div>
-        }
+      <PasswordForm
+        open={showPasswordForm}
+        onSubmit={savePassword}
+        onCancel={closePasswordForm}
       />
 
       <Modal
@@ -591,5 +515,174 @@ export default function UserProfilePage() {
         }
       />
     </>
+  );
+}
+
+type PasswordSet = {
+  new: string;
+  confirm: string;
+};
+
+type PasswordShowSet = {
+  current: boolean;
+  new: boolean;
+  confirm: boolean;
+};
+
+type OnSubmit = (passwords: PasswordSet) => Promise<void>;
+
+interface PasswordFormInterface {
+  open: boolean;
+  onSubmit: OnSubmit;
+  onCancel: () => void;
+}
+
+function PasswordForm({ open, onSubmit, onCancel }: PasswordFormInterface) {
+  const [passwords, setPasswords] = useState<PasswordSet>({
+    new: "",
+    confirm: "",
+  });
+
+  const [showPasswords, setShowPasswords] = useState<PasswordShowSet>({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+
+  let disableClick = false;
+  if (passwords.new.length < 4 || passwords.new !== passwords.confirm) {
+    disableClick = true;
+  }
+
+  function closeModal() {
+    setShowPasswords({
+      new: false,
+      current: false,
+      confirm: false,
+    });
+    setPasswords({
+      new: "",
+      confirm: "",
+    });
+  }
+
+  return (
+    <Modal
+      open={open}
+      title="Add Password Account"
+      body={
+        <div className="p-4">
+          <div className="flex flex-col gap-4">
+            {[
+              {
+                label: "New password",
+                value: passwords.new,
+                key: "new",
+                setter: (v: string) =>
+                  setPasswords((prev) => ({ ...prev, new: v })),
+                show: true,
+              },
+              {
+                label: "Confirm password",
+                value: passwords.confirm,
+                key: "confirm",
+                setter: (v: string) =>
+                  setPasswords((prev) => ({ ...prev, confirm: v })),
+                show: true,
+              },
+            ].map((field) => {
+              if (!field.show) {
+                return;
+              }
+
+              const isVisible =
+                showPasswords[field.key as keyof typeof showPasswords];
+
+              return (
+                <div key={field.key} className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-text-secondary">
+                    {field.label}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={isVisible ? "text" : "password"}
+                      value={field.value}
+                      onChange={(e) => field.setter(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-9 w-full rounded-md border border-border bg-bg-elevated px-3 pr-10 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
+                      autoComplete={
+                        field.key === "current"
+                          ? "current-password"
+                          : "new-password"
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPasswords((prev) => ({
+                          ...prev,
+                          [field.key]: !prev[field.key as keyof typeof prev],
+                        }))
+                      }
+                      className="absolute inset-y-0 right-2 flex items-center text-text-muted transition hover:text-text-primary"
+                      aria-label={isVisible ? "Hide password" : "Show password"}
+                    >
+                      {isVisible ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4 fill-none stroke-current"
+                          strokeWidth="1.8"
+                        >
+                          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      ) : (
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4 fill-none stroke-current"
+                          strokeWidth="1.8"
+                        >
+                          <path d="M3 3l18 18" />
+                          <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42" />
+                          <path d="M9.88 5.08A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7a16.7 16.7 0 0 1-4.04 5.13" />
+                          <path d="M6.61 6.61A16.43 16.43 0 0 0 2 12s3.5 7 10 7a10.9 10.9 0 0 0 5.39-1.61" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                closeModal();
+                onCancel();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                try {
+                  await onSubmit(passwords);
+                  closeModal();
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              disabled={disableClick}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+      }
+    />
   );
 }

@@ -31,6 +31,7 @@ export interface UserProfileApi {
   email: string;
   display_name?: string;
   avatar_url?: string;
+  login_method: LoginMethod;
   skills: string;
   timezone?: string;
   projects: number;
@@ -40,12 +41,15 @@ export interface UserProfileApi {
   last_login_time: string;
 }
 
+export type LoginMethod = "password" | "google" | "both";
+
 export interface UserProfile {
   id: string;
   username: string;
   email: string;
   displayName?: string;
   avatarUrl?: string;
+  loginMethod: LoginMethod;
   skills: string;
   timezone: string;
   projects: number;
@@ -61,6 +65,7 @@ export const MapUserProfile = (profile: UserProfileApi): UserProfile => ({
   email: profile.email,
   displayName: profile.display_name,
   avatarUrl: profile.avatar_url,
+  loginMethod: profile.login_method,
   skills: profile.skills,
   timezone: profile.timezone || "UTC+05:30",
   projects: profile.projects,
