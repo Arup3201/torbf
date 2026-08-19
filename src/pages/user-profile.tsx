@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { User } from "lucide-react";
 
 import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
@@ -54,16 +55,6 @@ const TIMEZONES: Option[] = [
   { label: "Kiritimati (UTC+14:00)", value: "UTC+14:00" },
 ];
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("")
-    .padEnd(2, "A");
-}
-
 export default function UserProfilePage() {
   const [profileInfo, setProfileInfo] = useState<UserProfile | null>(null);
   const [updatedProfileInfo, setUpdatedProfileInfo] =
@@ -74,6 +65,35 @@ export default function UserProfilePage() {
   const [editor, setEditor] = useState<
     "username" | "timezone" | "skills" | null
   >(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  function triggerFileSelect() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e: any) {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+
+    const form = new FormData();
+    form.append("avatar", file);
+
+    try {
+      const response = await ApiFetch("/profile/avatar", {
+        method: "POST",
+        body: form,
+      });
+
+      if (response.ok) {
+        await getUserProfile();
+      } else {
+        console.error("Failed to upload avatar");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   async function getUserProfile() {
     try {
@@ -241,10 +261,39 @@ export default function UserProfilePage() {
           <Card>
             <CardContent className="p-4 md:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-lg font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
-                  {getInitials(
-                    profileInfo?.displayName || profileInfo?.username || "",
+                <div className="flex flex-col items-center gap-2">
+                  {profileInfo?.avatarUrl ? (
+                    <img
+                      src={profileInfo.avatarUrl}
+                      alt={
+                        profileInfo?.displayName ||
+                        profileInfo?.username ||
+                        "User avatar"
+                      }
+                      className="h-16 w-16 rounded-full object-cover ring-1 ring-emerald-500/30"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-lg font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                      <User className="h-6 w-6" />
+                    </div>
                   )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="h-7 px-2 text-xs"
+                    onClick={triggerFileSelect}
+                  >
+                    Edit
+                  </Button>
                 </div>
 
                 <div className="min-w-0 flex-1">

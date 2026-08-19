@@ -12,16 +12,21 @@ const ApiFetch = async (
   let options: RequestInit = {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
       ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}),
     },
   };
 
-  if (initOptions) {
-    options = {
-      ...options,
-      ...initOptions,
+  if (initOptions?.method) {
+    options.method = initOptions.method;
+  }
+  if (initOptions?.headers) {
+    options.headers = {
+      ...options.headers,
+      ...initOptions.headers,
     };
+  }
+  if (initOptions?.body) {
+    options.body = initOptions.body;
   }
 
   const res = await fetch(API_ROOT + url, options);
