@@ -10,6 +10,7 @@ import {
   SquareCheckBig,
   Telescope,
   BellRing,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../context/auth";
@@ -50,12 +51,6 @@ export function Sidebar() {
     }
   });
 
-  const initials = user
-    ? user.displayName
-      ? user.displayName[0].toUpperCase()
-      : user.username[0].toUpperCase()
-    : "U";
-
   async function handleLogout() {
     try {
       await logout();
@@ -95,9 +90,17 @@ export function Sidebar() {
             onClick={() => navigate("/profile")}
             className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition duration-fast hover:bg-bg-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
-            <div className="h-7 w-7 rounded-full bg-emerald-500/10 flex items-center justify-center text-xs font-semibold text-emerald-300 shrink-0 ring-1 ring-emerald-500/30">
-              {initials}
-            </div>
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user?.displayName || user?.username || "User avatar"}
+                className="h-10 w-10 rounded-full object-cover ring-1 ring-emerald-500/30"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-lg font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                <User className="h-6 w-6" />
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-text-primary leading-tight">
                 {user?.displayName}
@@ -138,9 +141,17 @@ export function Sidebar() {
               onClick={() => setShowUserMenu((prev) => !prev)}
               className="relative flex flex-col items-center justify-center gap-1 py-1.5 rounded-md w-full transition duration-fast cursor-pointer hover:bg-zinc-800 group"
             >
-              <div className="h-4.5 w-4.5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-emerald-400 ring-1 ring-zinc-700 group-hover:ring-emerald-500 transition duration-fast">
-                {initials}
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user?.displayName || user?.username || "User avatar"}
+                  className="h-10 w-10 rounded-full object-cover ring-1 ring-emerald-500/30"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-lg font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                  <User className="h-6 w-6" />
+                </div>
+              )}
               <span className="text-[10px] font-medium leading-none text-zinc-500 group-hover:text-zinc-300 transition duration-fast">
                 Account
               </span>
@@ -157,9 +168,17 @@ export function Sidebar() {
                 }}
                 className="flex w-full cursor-pointer items-center gap-3 border-b border-border px-3 py-3 text-left transition hover:bg-zinc-800/80"
               >
-                <div className="h-9 w-9 rounded-full bg-emerald-500/10 flex items-center justify-center text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30 shrink-0">
-                  {initials}
-                </div>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user?.displayName || user?.username || "User avatar"}
+                    className="h-10 w-10 rounded-full object-cover ring-1 ring-emerald-500/30"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-lg font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                    <User className="h-6 w-6" />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-text-primary">
                     {user?.displayName}

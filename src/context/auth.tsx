@@ -36,21 +36,40 @@ const AuthProvider: React.FC<AuthProviderInterface> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(async () => {
-    const response = await ApiFetch("/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    if (response.status === 200) {
-      console.log("logging out...");
-    } else {
-      console.error("Something went wrong during logout.");
+    try {
+      const response = await ApiFetch("/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (response.status === 200) {
+        console.log("logging out...");
+      } else {
+        console.error("Something went wrong during logout.");
+      }
+    } catch (err) {
+      // network / refresh errors can happen — we still clear local state
+      console.error("Logout request failed", err);
+    } finally {
+      tokenStore.clear();
+      userStore.clear();
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    window.addEventListener("auth:logout", logout);
-    return () => window.removeEventListener("auth:logout", logout);
-  }, [logout]);
+    // When other code dispatches `auth:logout` (e.g. session expired),
+    // only perform local cleanup here to avoid calling network logout
+    // which can trigger the same 401 -> refresh -> dispatch loop.
+    const handleExternalLogout = () => {
+      tokenStore.clear();
+      userStore.clear();
+      setLoading(false);
+    };
+
+    window.addEventListener("auth:logout", handleExternalLogout);
+    return () =>
+      window.removeEventListener("auth:logout", handleExternalLogout);
+  }, []);
 
   async function refreshToken() {
     const token = tokenStore.get();
