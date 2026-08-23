@@ -1,7 +1,7 @@
 import { tokenStore } from "./token";
 import { userStore } from "./user";
 
-const API_ROOT = "http://localhost:8081/api/v1";
+const API_ROOT = import.meta.env.VITE_API_URL;
 
 const ApiFetch = async (
   url: string,
@@ -12,16 +12,21 @@ const ApiFetch = async (
   let options: RequestInit = {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
       ...(accessToken ? { Authorization: "Bearer " + accessToken } : {}),
     },
   };
 
-  if (initOptions) {
-    options = {
-      ...options,
-      ...initOptions,
+  if (initOptions?.method) {
+    options.method = initOptions.method;
+  }
+  if (initOptions?.headers) {
+    options.headers = {
+      ...options.headers,
+      ...initOptions.headers,
     };
+  }
+  if (initOptions?.body) {
+    options.body = initOptions.body;
   }
 
   const res = await fetch(API_ROOT + url, options);
