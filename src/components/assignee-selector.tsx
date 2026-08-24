@@ -13,7 +13,7 @@ interface Option {
   value: string;
   label: string;
   email: string;
-  avatar: string;
+  avatar: string | undefined;
 }
 const AssigneeSelector = ({
   members,
