@@ -118,18 +118,8 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    try {
-      const response = await fetch(API_ROOT + "/auth/google/redirect");
-      const json = await response.json();
-      if (json.data) {
-        window.open(json.data, "_parent");
-      } else {
-        throw new Error("No redirect URL in the response!");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  function handleGoogleLogin() {
+    window.location.href = API_ROOT + "/auth/google/redirect";
   }
 
   return (

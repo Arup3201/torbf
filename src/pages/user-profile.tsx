@@ -226,18 +226,8 @@ export default function UserProfilePage() {
     closeEditor();
   };
 
-  async function connectWithGoogle() {
-    try {
-      const response = await fetch(API_ROOT + "/profile/google/redirect");
-      const json = await response.json();
-      if (json.data) {
-        window.open(json.data, "_parent");
-      } else {
-        throw new Error("No redirect URL in the response!");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  function connectWithGoogle() {
+    window.location.href = API_ROOT + "/profile/google/redirect";
   }
 
   let editorTitle = "";
