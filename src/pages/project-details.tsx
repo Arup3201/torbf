@@ -365,9 +365,23 @@ function MembersSection({ members }: { members: Member[] }) {
               <TableCell>
                 <div className="flex items-center gap-2.5">
                   <div className="h-7 w-7 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-xs font-semibold text-primary shrink-0">
-                    {member.avatar.displayName
-                      ? member.avatar.displayName?.charAt(0).toUpperCase()
-                      : member.avatar.username}
+                    {member.avatar.avatarUrl ? (
+                      <img
+                        src={member.avatar.avatarUrl}
+                        alt={
+                          member.avatar.displayName || member.avatar.username
+                        }
+                        className="h-7 w-7 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      (member.avatar.displayName || member.avatar.username) && (
+                        <div className="h-7 w-7 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                          {member.avatar.displayName
+                            ? member.avatar.displayName.charAt(0).toUpperCase()
+                            : member.avatar.username.charAt(0).toUpperCase()}
+                        </div>
+                      )
+                    )}
                   </div>
                   <span className="font-medium text-text-primary">
                     {member.avatar.displayName || member.avatar.username}
@@ -431,9 +445,21 @@ function JoinRequestsSection({
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="h-7 w-7 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-xs font-semibold text-primary shrink-0">
-                  {req.avatar.displayName
-                    ? req.avatar.displayName?.charAt(0).toUpperCase()
-                    : req.avatar.username.charAt(0).toUpperCase()}
+                  {req.avatar.avatarUrl ? (
+                    <img
+                      src={req.avatar.avatarUrl}
+                      alt={req.avatar.displayName || req.avatar.username}
+                      className="h-7 w-7 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    (req.avatar.displayName || req.avatar.username) && (
+                      <div className="h-7 w-7 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                        {req.avatar.displayName
+                          ? req.avatar.displayName.charAt(0).toUpperCase()
+                          : req.avatar.username.charAt(0).toUpperCase()}
+                      </div>
+                    )
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-text-primary truncate">
