@@ -28,6 +28,7 @@ import {
 import { MapTask, type Task, type TasksResponseApi } from "../types/task";
 import { ApiFetch } from "../utils/api";
 import { AddTaskModal } from "../components/add-task";
+import { Modal } from "../components/modal";
 import { TaskDrawer } from "./task-drawer";
 import { JOIN_STATUS } from "../types/explore";
 import { renderLocalTime } from "../utils";
@@ -47,6 +48,11 @@ export default function ProjectDetailsPage() {
 
   const [addTask, setAddTask] = useState<boolean>(false);
   const [_editProject, setEditProject] = useState<boolean>(false);
+  const [updatedProject, setUpdatedProject] = useState<{
+    name: string;
+    description?: string | null;
+    skills?: string | null;
+  }>({ name: "", description: "", skills: "" });
 
   async function getProjectDetails(id: string) {
     try {
@@ -124,6 +130,16 @@ export default function ProjectDetailsPage() {
       getJoinRequests(projectId);
     }
   }, [projectId]);
+
+  useEffect(() => {
+    if (_editProject && details) {
+      setUpdatedProject({
+        name: details.name || "",
+        description: details.description || "",
+        skills: details.skills || "",
+      });
+    }
+  }, [_editProject, details]);
 
   if (!projectId) {
     return "";
@@ -266,6 +282,97 @@ export default function ProjectDetailsPage() {
           await getProjectTasks(projectId);
           setAddTask(false);
         }}
+      />
+      <Modal
+        open={_editProject}
+        title="Edit project"
+        body={
+          <div className="p-4">
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-text-muted">Name</label>
+                <input
+                  value={updatedProject.name}
+                  onChange={(e) =>
+                    setUpdatedProject((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  className="h-9 w-full rounded-md border border-border bg-bg-elevated px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-text-muted">Description</label>
+                <textarea
+                  value={updatedProject.description || ""}
+                  onChange={(e) =>
+                    setUpdatedProject((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={4}
+                  className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-text-muted">
+                  Skills (comma separated)
+                </label>
+                <input
+                  value={updatedProject.skills || ""}
+                  onChange={(e) =>
+                    setUpdatedProject((prev) => ({
+                      ...prev,
+                      skills: e.target.value,
+                    }))
+                  }
+                  className="h-9 w-full rounded-md border border-border bg-bg-elevated px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:shadow-focus-primary"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setEditProject(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      if (!projectId) return;
+                      const body = {
+                        name: updatedProject.name,
+                        description: updatedProject.description,
+                        skills: updatedProject.skills,
+                      };
+                      const response = await ApiFetch(
+                        `/projects/${projectId}`,
+                        {
+                          method: "PATCH",
+                          body: JSON.stringify(body),
+                        },
+                      );
+                      if (!response.ok) {
+                        throw new Error("Failed to update project.");
+                      }
+                      await getProjectDetails(projectId);
+                      setEditProject(false);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        }
       />
       <TaskDrawer
         open={Boolean(taskId)}
