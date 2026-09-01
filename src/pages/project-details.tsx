@@ -170,6 +170,33 @@ export default function ProjectDetailsPage() {
             <p className="text-xs text-text-muted">Skills: {details.skills}</p>
           )}
 
+          {details?.owner && (
+            <div className="flex items-center gap-3">
+              {details.owner.avatarUrl ? (
+                <img
+                  src={details.owner.avatarUrl}
+                  alt={details.owner.displayName || details.owner.username}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-xs font-semibold text-primary">
+                  {details.owner.displayName
+                    ? details.owner.displayName.charAt(0).toUpperCase()
+                    : details.owner.username.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-text-primary">
+                  {details.owner.displayName || details.owner.username}
+                </p>
+                <p className="text-xs text-text-muted truncate">
+                  @{details.owner.username}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Stats row */}
           <div className="flex items-center gap-1 flex-wrap">
             {[
