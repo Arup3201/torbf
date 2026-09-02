@@ -129,8 +129,8 @@ function getNotificationInfo(notification: RealtimeNotification) {
     case "task_updated":
       return {
         icon: Pencil,
-        title: notification.data.updater.username,
-        message: `Updated "${notification.data.task.title}"`,
+        title: "Task Updated",
+        message: `${notification.data.updater.username} updated "${notification.data.task.title}"`,
         details: notification.data.updates
           .map((u) => `${u.field} → ${u.to}`)
           .join(", "),
@@ -153,25 +153,27 @@ function getNotificationInfo(notification: RealtimeNotification) {
     case "join_requested":
       return {
         icon: DoorOpen,
-        title: notification.data.requestor.username,
-        message: `Requested to join ${notification.data.project.name}`,
+        title: "New Join Request",
+        message: `${notification.data.requestor.username} requested to join ${notification.data.project.name}`,
       };
 
     case "join_responded":
       return {
         icon: BadgeCheck,
-        title: notification.data.responder.username,
+        title: "Join Request Update",
         message:
-          notification.data.status === "approved"
-            ? `Approved your request to join ${notification.data.project.name}`
-            : `Rejected your request to join ${notification.data.project.name}`,
+          notification.data.status === "Accepted"
+            ? `${notification.data.responder.username} approved your request to join ${notification.data.project.name}`
+            : notification.data.status === "Rejected"
+              ? `${notification.data.responder.username} rejected your request to join ${notification.data.project.name}`
+              : `${notification.data.responder.username} updated join request status`,
       };
 
     case "comment_added":
       return {
         icon: MessageSquare,
-        title: notification.data.commenter.username,
-        message: `Commented on "${notification.data.task.title}"`,
+        title: "New Comment",
+        message: `${notification.data.commenter.username} commented on "${notification.data.task.title}"`,
       };
 
     default:
