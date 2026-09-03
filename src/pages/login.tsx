@@ -31,7 +31,7 @@ export default function LoginPage() {
       return;
     }
 
-    async function completeGoogleLogin() {
+    async function completeGoogleLogin(userID: string, token: string) {
       setLoading(true);
       try {
         await loginFromGoogle(userID, token)
@@ -44,7 +44,7 @@ export default function LoginPage() {
       }
     }
 
-    completeGoogleLogin()
+    completeGoogleLogin(userID, token);
   }, [userID, token]);
 
   useEffect(() => {
