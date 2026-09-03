@@ -9,13 +9,13 @@ import {
 } from "react";
 import { ApiFetch, getValidToken } from "../utils/api";
 import { tokenStore } from "../utils/token";
-import type { Avatar } from "../types/avatar";
-import { userStore } from "../utils/user";
+import { MapAvatar, type Avatar, type AvatarApi } from "../types/avatar";
 
 interface AuthContextValue {
   loading: boolean;
   setLoading: Dispatch<SetStateAction<boolean>>;
   refreshToken(): Promise<void>;
+  setAuthenticatedUser(user: AvatarApi): void;
   user: Avatar | null;
   logout(): Promise<void>;
 }
@@ -28,12 +28,18 @@ const authContext = createContext<AuthContextValue>({
   loading: true,
   setLoading: () => {},
   refreshToken: () => Promise.resolve(),
+  setAuthenticatedUser: () => {},
   user: null,
   logout: () => Promise.resolve(),
 });
 
 const AuthProvider: React.FC<AuthProviderInterface> = ({ children }) => {
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<Avatar | null>(null);
+
+  const setAuthenticatedUser = useCallback((userData: AvatarApi) => {
+    setUser(MapAvatar(userData));
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -51,7 +57,7 @@ const AuthProvider: React.FC<AuthProviderInterface> = ({ children }) => {
       console.error("Logout request failed", err);
     } finally {
       tokenStore.clear();
-      userStore.clear();
+      setUser(null);
       setLoading(false);
     }
   }, []);
@@ -62,7 +68,7 @@ const AuthProvider: React.FC<AuthProviderInterface> = ({ children }) => {
     // which can trigger the same 401 -> refresh -> dispatch loop.
     const handleExternalLogout = () => {
       tokenStore.clear();
-      userStore.clear();
+      setUser(null);
       setLoading(false);
     };
 
@@ -76,7 +82,8 @@ const AuthProvider: React.FC<AuthProviderInterface> = ({ children }) => {
     if (token === null) {
       setLoading(true);
       try {
-        await getValidToken();
+        const refreshedSession = await getValidToken();
+        setAuthenticatedUser(refreshedSession.user);
       } catch (err) {
         console.error(err);
         throw new Error("Token refresh failed");
@@ -86,14 +93,13 @@ const AuthProvider: React.FC<AuthProviderInterface> = ({ children }) => {
     }
   }
 
-  const user = userStore.get();
-
   return (
     <authContext.Provider
       value={{
         loading,
         setLoading,
         refreshToken,
+        setAuthenticatedUser,
         user,
         logout,
       }}

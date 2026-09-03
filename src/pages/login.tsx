@@ -6,12 +6,11 @@ import { Input } from "../components/input";
 import { Logo } from "../components/logo";
 import { API_ROOT } from "../utils/api";
 import { tokenStore } from "../utils/token";
-import { userStore } from "../utils/user";
 import { useAuth } from "../context/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { setLoading } = useAuth();
+  const { setAuthenticatedUser, setLoading } = useAuth();
 
   const [searchParams] = useSearchParams();
 
@@ -88,7 +87,7 @@ export default function LoginPage() {
     const respondData = await res.json();
     if (respondData.data) {
       tokenStore.set(respondData.data.access_token);
-      userStore.set(respondData.data.user);
+      setAuthenticatedUser(respondData.data.user);
     } else {
       throw new Error("Incorrect response data. Try again.");
     }
@@ -115,7 +114,7 @@ export default function LoginPage() {
       const respondData = await res.json();
       if (respondData.data) {
         tokenStore.set(respondData.data.access_token);
-        userStore.set(respondData.data.user);
+        setAuthenticatedUser(respondData.data.user);
       } else {
         throw new Error("Empty response data from login.");
       }

@@ -1,5 +1,5 @@
 import { tokenStore } from "./token";
-import { userStore } from "./user";
+import type { AvatarApi } from "../types/avatar";
 
 const API_ROOT = import.meta.env.VITE_API_URL;
 
@@ -25,6 +25,9 @@ const ApiFetch = async (
       ...initOptions.headers,
     };
   }
+  if(initOptions?.credentials) {
+    options.credentials = initOptions.credentials;
+  }
   if (initOptions?.body) {
     options.body = initOptions.body;
   }
@@ -32,7 +35,7 @@ const ApiFetch = async (
   const res = await fetch(API_ROOT + url, options);
   if (res.status === 401) {
     try {
-      const newToken = await getValidToken();
+      const { access_token: newToken } = await getValidToken();
       const res = await fetch(API_ROOT + url, {
         ...options,
         headers: {
@@ -52,8 +55,13 @@ const ApiFetch = async (
   return res;
 };
 
+interface RefreshTokenData {
+  access_token: string;
+  user: AvatarApi;
+}
+
 // Lock for keeping only one refresh call active!
-let refreshingPromise: null | Promise<Response>;
+let refreshingPromise: Promise<RefreshTokenData> | null = null;
 
 async function getValidToken() {
   if (refreshingPromise) {
@@ -67,10 +75,9 @@ async function getValidToken() {
     .then(async (res) => {
       if (!res.ok) throw new Error("refresh token failed");
       const { data } = await res.json();
-      if (data) {
+      if (data?.access_token && data.user) {
         tokenStore.set(data.access_token);
-        userStore.set(data.user);
-        return data.access_token;
+        return data;
       } else {
         throw new Error("data is empty");
       }
