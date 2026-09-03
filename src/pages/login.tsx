@@ -27,15 +27,25 @@ export default function LoginPage() {
   useEffect(() => {
     if (!userID && !token) return;
 
-    if (userID && token) {
-      setLoading(true);
-      loginFromGoogle(userID, token)
-        .catch((err) => setError((err as Error).message ?? "Login failed"))
-        .finally(() => setLoading(false));
-      navigate("/");
-    } else {
+    if (!userID || !token) {
       setError("User ID and token missing. Malformed URI.");
+      return;
     }
+
+    async function completeGoogleLogin() {
+      setLoading(true);
+      try {
+        await loginFromGoogle(userID, token)
+        navigate("/", { replace: true });
+      }
+      catch (err) {
+        setError((err as Error).message ?? "Login failed")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    completeGoogleLogin()
   }, [userID, token]);
 
   useEffect(() => {
